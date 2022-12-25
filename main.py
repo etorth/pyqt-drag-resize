@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import QGraphicsRectItem, QApplication, QGraphicsView, QGra
 
 
 class GraphicsRectItem(QGraphicsRectItem):
-    dragDistance = 8.0
+    dragSensitiveDistance = 8.0
 
     handleTopLeft = 1
     handleTopMiddle = 2
@@ -44,15 +44,15 @@ class GraphicsRectItem(QGraphicsRectItem):
     def handleAt(self, point):
         b = self.boundingRect()
         if b.contains(point):
-            if QLineF(point, b.topLeft    ()).length() <= self.dragDistance: return self.handleTopLeft
-            if QLineF(point, b.topRight   ()).length() <= self.dragDistance: return self.handleTopRight
-            if QLineF(point, b.bottomLeft ()).length() <= self.dragDistance: return self.handleBottomLeft
-            if QLineF(point, b.bottomRight()).length() <= self.dragDistance: return self.handleBottomRight
+            if QLineF(point, b.topLeft    ()).length() <= self.dragSensitiveDistance: return self.handleTopLeft
+            if QLineF(point, b.topRight   ()).length() <= self.dragSensitiveDistance: return self.handleTopRight
+            if QLineF(point, b.bottomLeft ()).length() <= self.dragSensitiveDistance: return self.handleBottomLeft
+            if QLineF(point, b.bottomRight()).length() <= self.dragSensitiveDistance: return self.handleBottomRight
 
-            if abs(point.x() - b.left  ()) <= self.dragDistance: return self.handleMiddleLeft
-            if abs(point.x() - b.right ()) <= self.dragDistance: return self.handleMiddleRight
-            if abs(point.y() - b.top   ()) <= self.dragDistance: return self.handleTopMiddle
-            if abs(point.y() - b.bottom()) <= self.dragDistance: return self.handleBottomMiddle
+            if abs(point.x() - b.left  ()) <= self.dragSensitiveDistance: return self.handleMiddleLeft
+            if abs(point.x() - b.right ()) <= self.dragSensitiveDistance: return self.handleMiddleRight
+            if abs(point.y() - b.top   ()) <= self.dragSensitiveDistance: return self.handleTopMiddle
+            if abs(point.y() - b.bottom()) <= self.dragSensitiveDistance: return self.handleBottomMiddle
         return None
 
 
