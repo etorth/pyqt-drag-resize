@@ -16,7 +16,7 @@ class GraphicsRectItem(QGraphicsRectItem):
     handleBottomMiddle = 7
     handleBottomRight = 8
 
-    handleSize = +8.0
+    dragDistance = +8.0
     handleSpace = -4.0
 
     handleCursors = {
@@ -31,11 +31,9 @@ class GraphicsRectItem(QGraphicsRectItem):
     }
 
     def __init__(self, *args):
-        """
-        Initialize the shape.
+        """Initialize the shape.
         """
         super().__init__(*args)
-        self.handles = {}
         self.handleSelected = None
         self.mousePressPos = None
         self.mousePressRect = None
@@ -44,28 +42,26 @@ class GraphicsRectItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsFocusable, True)
-        self.updateHandlesPos()
 
     def handleAt(self, point):
         """Returns the resize handle below the given point.
         """
         b = self.boundingRect()
         if b.contains(point):
-            if QLineF(point, b.topLeft    ()).length() <= self.handleSize: return self.handleTopLeft
-            if QLineF(point, b.topRight   ()).length() <= self.handleSize: return self.handleTopRight
-            if QLineF(point, b.bottomLeft ()).length() <= self.handleSize: return self.handleBottomLeft
-            if QLineF(point, b.bottomRight()).length() <= self.handleSize: return self.handleBottomRight
+            if QLineF(point, b.topLeft    ()).length() <= self.dragDistance: return self.handleTopLeft
+            if QLineF(point, b.topRight   ()).length() <= self.dragDistance: return self.handleTopRight
+            if QLineF(point, b.bottomLeft ()).length() <= self.dragDistance: return self.handleBottomLeft
+            if QLineF(point, b.bottomRight()).length() <= self.dragDistance: return self.handleBottomRight
 
-            if abs(point.x() - b.left  ()) <= self.handleSize: return self.handleMiddleLeft
-            if abs(point.x() - b.right ()) <= self.handleSize: return self.handleMiddleRight
-            if abs(point.y() - b.top   ()) <= self.handleSize: return self.handleTopMiddle
-            if abs(point.y() - b.bottom()) <= self.handleSize: return self.handleBottomMiddle
+            if abs(point.x() - b.left  ()) <= self.dragDistance: return self.handleMiddleLeft
+            if abs(point.x() - b.right ()) <= self.dragDistance: return self.handleMiddleRight
+            if abs(point.y() - b.top   ()) <= self.dragDistance: return self.handleTopMiddle
+            if abs(point.y() - b.bottom()) <= self.dragDistance: return self.handleBottomMiddle
 
         return None
 
     def hoverMoveEvent(self, moveEvent):
-        """
-        Executed when the mouse moves over the shape (NOT PRESSED).
+        """Executed when the mouse moves over the shape (NOT PRESSED).
         """
         if self.isSelected():
             handle = self.handleAt(moveEvent.pos())
@@ -74,15 +70,13 @@ class GraphicsRectItem(QGraphicsRectItem):
         super().hoverMoveEvent(moveEvent)
 
     def hoverLeaveEvent(self, moveEvent):
-        """
-        Executed when the mouse leaves the shape (NOT PRESSED).
+        """Executed when the mouse leaves the shape (NOT PRESSED).
         """
         self.setCursor(Qt.CursorShape.ArrowCursor)
         super().hoverLeaveEvent(moveEvent)
 
     def mousePressEvent(self, mouseEvent):
-        """
-        Executed when the mouse is pressed on the item.
+        """Executed when the mouse is pressed on the item.
         """
         self.handleSelected = self.handleAt(mouseEvent.pos())
         if self.handleSelected:
@@ -91,8 +85,7 @@ class GraphicsRectItem(QGraphicsRectItem):
         super().mousePressEvent(mouseEvent)
 
     def mouseMoveEvent(self, mouseEvent):
-        """
-        Executed when the mouse is being moved over the item while being pressed.
+        """Executed when the mouse is being moved over the item while being pressed.
         """
         if self.handleSelected is not None:
             self.interactiveResize(mouseEvent.pos())
@@ -100,8 +93,7 @@ class GraphicsRectItem(QGraphicsRectItem):
             super().mouseMoveEvent(mouseEvent)
 
     def mouseReleaseEvent(self, mouseEvent):
-        """
-        Executed when the mouse is released from the item.
+        """Executed when the mouse is released from the item.
         """
         super().mouseReleaseEvent(mouseEvent)
         self.handleSelected = None
@@ -109,158 +101,63 @@ class GraphicsRectItem(QGraphicsRectItem):
         self.mousePressRect = None
         self.update()
 
-    def boundingRect(self):
-        """
-        Returns the bounding rect of the shape (including the resize handles).
-        """
-        o = self.handleSize + self.handleSpace
-        return self.rect().adjusted(-o, -o, o, o)
-
-    def updateHandlesPos(self):
-        """
-        Update current resize handles according to the shape size and position.
-        """
-        s = self.handleSize
-        b = self.boundingRect()
-        self.handles[self.handleTopLeft] = QRectF(b.left(), b.top(), s, s)
-        self.handles[self.handleTopMiddle] = QRectF(b.center().x() - s / 2, b.top(), s, s)
-        self.handles[self.handleTopRight] = QRectF(b.right() - s, b.top(), s, s)
-        self.handles[self.handleMiddleLeft] = QRectF(b.left(), b.center().y() - s / 2, s, s)
-        self.handles[self.handleMiddleRight] = QRectF(b.right() - s, b.center().y() - s / 2, s, s)
-        self.handles[self.handleBottomLeft] = QRectF(b.left(), b.bottom() - s, s, s)
-        self.handles[self.handleBottomMiddle] = QRectF(b.center().x() - s / 2, b.bottom() - s, s, s)
-        self.handles[self.handleBottomRight] = QRectF(b.right() - s, b.bottom() - s, s, s)
 
     def interactiveResize(self, mousePos):
+        """Perform shape interactive resize.
         """
-        Perform shape interactive resize.
-        """
-        offset = self.handleSize + self.handleSpace
-        boundingRect = self.boundingRect()
         rect = self.rect()
-        diff = QPointF(0, 0)
-
         self.prepareGeometryChange()
 
         if self.handleSelected == self.handleTopLeft:
 
-            fromX = self.mousePressRect.left()
-            fromY = self.mousePressRect.top()
-            toX = fromX + mousePos.x() - self.mousePressPos.x()
-            toY = fromY + mousePos.y() - self.mousePressPos.y()
-            diff.setX(toX - fromX)
-            diff.setY(toY - fromY)
-            boundingRect.setLeft(toX)
-            boundingRect.setTop(toY)
-            rect.setLeft(boundingRect.left() + offset)
-            rect.setTop(boundingRect.top() + offset)
+            rect.setLeft(self.mousePressRect.left() + mousePos.x() - self.mousePressPos.x())
+            rect.setTop(self.mousePressRect.top() + mousePos.y() - self.mousePressPos.y())
             self.setRect(rect)
 
         elif self.handleSelected == self.handleTopMiddle:
 
-            fromY = self.mousePressRect.top()
-            toY = fromY + mousePos.y() - self.mousePressPos.y()
-            diff.setY(toY - fromY)
-            boundingRect.setTop(toY)
-            rect.setTop(boundingRect.top() + offset)
+            rect.setTop(self.mousePressRect.top() + mousePos.y() - self.mousePressPos.y())
             self.setRect(rect)
 
         elif self.handleSelected == self.handleTopRight:
 
-            fromX = self.mousePressRect.right()
-            fromY = self.mousePressRect.top()
-            toX = fromX + mousePos.x() - self.mousePressPos.x()
-            toY = fromY + mousePos.y() - self.mousePressPos.y()
-            diff.setX(toX - fromX)
-            diff.setY(toY - fromY)
-            boundingRect.setRight(toX)
-            boundingRect.setTop(toY)
-            rect.setRight(boundingRect.right() - offset)
-            rect.setTop(boundingRect.top() + offset)
+            rect.setRight(self.mousePressRect.right() + mousePos.x() - self.mousePressPos.x())
+            rect.setTop(self.mousePressRect.top() + mousePos.y() - self.mousePressPos.y())
             self.setRect(rect)
 
         elif self.handleSelected == self.handleMiddleLeft:
 
-            fromX = self.mousePressRect.left()
-            toX = fromX + mousePos.x() - self.mousePressPos.x()
-            diff.setX(toX - fromX)
-            boundingRect.setLeft(toX)
-            rect.setLeft(boundingRect.left() + offset)
+            rect.setLeft(self.mousePressRect.left() + mousePos.x() - self.mousePressPos.x())
             self.setRect(rect)
 
         elif self.handleSelected == self.handleMiddleRight:
-            print("MR")
-            fromX = self.mousePressRect.right()
-            toX = fromX + mousePos.x() - self.mousePressPos.x()
-            diff.setX(toX - fromX)
-            boundingRect.setRight(toX)
-            rect.setRight(boundingRect.right() - offset)
+            rect.setRight(self.mousePressRect.right() + mousePos.x() - self.mousePressPos.x())
             self.setRect(rect)
 
         elif self.handleSelected == self.handleBottomLeft:
 
-            fromX = self.mousePressRect.left()
-            fromY = self.mousePressRect.bottom()
-            toX = fromX + mousePos.x() - self.mousePressPos.x()
-            toY = fromY + mousePos.y() - self.mousePressPos.y()
-            diff.setX(toX - fromX)
-            diff.setY(toY - fromY)
-            boundingRect.setLeft(toX)
-            boundingRect.setBottom(toY)
-            rect.setLeft(boundingRect.left() + offset)
-            rect.setBottom(boundingRect.bottom() - offset)
+            rect.setLeft(self.mousePressRect.left() + mousePos.x() - self.mousePressPos.x())
+            rect.setBottom(self.mousePressRect.bottom() + mousePos.y() - self.mousePressPos.y())
             self.setRect(rect)
 
         elif self.handleSelected == self.handleBottomMiddle:
 
-            fromY = self.mousePressRect.bottom()
-            toY = fromY + mousePos.y() - self.mousePressPos.y()
-            diff.setY(toY - fromY)
-            boundingRect.setBottom(toY)
-            rect.setBottom(boundingRect.bottom() - offset)
+            rect.setBottom(self.mousePressRect.bottom() + mousePos.y() - self.mousePressPos.y())
             self.setRect(rect)
 
         elif self.handleSelected == self.handleBottomRight:
 
-            fromX = self.mousePressRect.right()
-            fromY = self.mousePressRect.bottom()
-            toX = fromX + mousePos.x() - self.mousePressPos.x()
-            toY = fromY + mousePos.y() - self.mousePressPos.y()
-            diff.setX(toX - fromX)
-            diff.setY(toY - fromY)
-            boundingRect.setRight(toX)
-            boundingRect.setBottom(toY)
-            rect.setRight(boundingRect.right() - offset)
-            rect.setBottom(boundingRect.bottom() - offset)
+            rect.setRight(self.mousePressRect.right() + mousePos.x() - self.mousePressPos.x())
+            rect.setBottom(self.mousePressRect.bottom() + mousePos.y() - self.mousePressPos.y())
             self.setRect(rect)
 
-        self.updateHandlesPos()
-
-    def shape(self):
-        """
-        Returns the shape of this item as a QPainterPath in local coordinates.
-        """
-        path = QPainterPath()
-        path.addRect(self.rect())
-        if self.isSelected():
-            for shape in self.handles.values():
-                path.addEllipse(shape)
-        return path
 
     def paint(self, painter, option, widget=None):
-        """
-        Paint the node in the graphic view.
+        """Paint the node in the graphic view.
         """
         painter.setBrush(QBrush(QColor(0, 0, 255, 100) if self.isSelected() else QColor(255, 0, 0, 100)))
         painter.setPen(QPen(QColor(0, 0, 0), 1.0, Qt.PenStyle.SolidLine))
         painter.drawRect(self.rect())
-
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setBrush(QBrush(QColor(255, 0, 0, 255)))
-        painter.setPen(QPen(QColor(0, 0, 0, 255), 1.0, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-        for handle, rect in self.handles.items():
-            if self.handleSelected is None or handle == self.handleSelected:
-                painter.drawEllipse(rect)
 
 
 def main():
