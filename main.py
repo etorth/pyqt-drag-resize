@@ -243,7 +243,7 @@ class GraphicsRectItem(QGraphicsRectItem):
         """
         Paint the node in the graphic view.
         """
-        painter.setBrush(QBrush(QColor(255, 0, 0, 100)))
+        painter.setBrush(QBrush(QColor(0, 0, 255, 100) if self.isSelected() else QColor(255, 0, 0, 100)))
         painter.setPen(QPen(QColor(0, 0, 0), 1.0, Qt.PenStyle.SolidLine))
         painter.drawRect(self.rect())
 
