@@ -1,6 +1,6 @@
 import sys
 
-from PyQt6.QtCore import Qt, QRectF, QPointF
+from PyQt6.QtCore import Qt, QRectF, QPointF, QLineF
 from PyQt6.QtGui import QBrush, QPainterPath, QPainter, QColor, QPen, QPixmap
 from PyQt6.QtWidgets import QGraphicsRectItem, QApplication, QGraphicsView, QGraphicsScene, QGraphicsItem
 
@@ -47,12 +47,20 @@ class GraphicsRectItem(QGraphicsRectItem):
         self.updateHandlesPos()
 
     def handleAt(self, point):
+        """Returns the resize handle below the given point.
         """
-        Returns the resize handle below the given point.
-        """
-        for k, v, in self.handles.items():
-            if v.contains(point):
-                return k
+        b = self.boundingRect()
+        if b.contains(point):
+            if QLineF(point, b.topLeft    ()).length() <= self.handleSize: return self.handleTopLeft
+            if QLineF(point, b.topRight   ()).length() <= self.handleSize: return self.handleTopRight
+            if QLineF(point, b.bottomLeft ()).length() <= self.handleSize: return self.handleBottomLeft
+            if QLineF(point, b.bottomRight()).length() <= self.handleSize: return self.handleBottomRight
+
+            if abs(point.x() - b.left  ()) <= self.handleSize: return self.handleMiddleLeft
+            if abs(point.x() - b.right ()) <= self.handleSize: return self.handleMiddleRight
+            if abs(point.y() - b.top   ()) <= self.handleSize: return self.handleTopMiddle
+            if abs(point.y() - b.bottom()) <= self.handleSize: return self.handleBottomMiddle
+
         return None
 
     def hoverMoveEvent(self, moveEvent):
