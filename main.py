@@ -6,7 +6,6 @@ from PyQt6.QtWidgets import QGraphicsRectItem, QApplication, QGraphicsView, QGra
 
 
 class GraphicsRectItem(QGraphicsRectItem):
-
     dragDistance = 8.0
 
     handleTopLeft = 1
@@ -29,9 +28,8 @@ class GraphicsRectItem(QGraphicsRectItem):
         handleBottomRight: Qt.CursorShape.SizeFDiagCursor,
     }
 
+
     def __init__(self, *args):
-        """Initialize the shape.
-        """
         super().__init__(*args)
         self.handleSelected = None
         self.mousePressPos = None
@@ -42,9 +40,8 @@ class GraphicsRectItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsFocusable, True)
 
+
     def handleAt(self, point):
-        """Returns the resize handle below the given point.
-        """
         b = self.boundingRect()
         if b.contains(point):
             if QLineF(point, b.topLeft    ()).length() <= self.dragDistance: return self.handleTopLeft
@@ -56,12 +53,10 @@ class GraphicsRectItem(QGraphicsRectItem):
             if abs(point.x() - b.right ()) <= self.dragDistance: return self.handleMiddleRight
             if abs(point.y() - b.top   ()) <= self.dragDistance: return self.handleTopMiddle
             if abs(point.y() - b.bottom()) <= self.dragDistance: return self.handleBottomMiddle
-
         return None
 
+
     def hoverMoveEvent(self, moveEvent):
-        """Executed when the mouse moves over the shape (NOT PRESSED).
-        """
         if self.isSelected():
             handle = self.handleAt(moveEvent.pos())
             if handle is None:
@@ -71,32 +66,28 @@ class GraphicsRectItem(QGraphicsRectItem):
             self.setCursor(cursor)
         super().hoverMoveEvent(moveEvent)
 
+
     def hoverLeaveEvent(self, moveEvent):
-        """Executed when the mouse leaves the shape (NOT PRESSED).
-        """
         self.setCursor(Qt.CursorShape.ArrowCursor)
         super().hoverLeaveEvent(moveEvent)
 
+
     def mousePressEvent(self, mouseEvent):
-        """Executed when the mouse is pressed on the item.
-        """
         self.handleSelected = self.handleAt(mouseEvent.pos())
         if self.handleSelected:
             self.mousePressPos = mouseEvent.pos()
             self.mousePressRect = self.boundingRect()
         super().mousePressEvent(mouseEvent)
 
+
     def mouseMoveEvent(self, mouseEvent):
-        """Executed when the mouse is being moved over the item while being pressed.
-        """
         if self.handleSelected is None:
             super().mouseMoveEvent(mouseEvent)
         else:
             self.interactiveResize(mouseEvent.pos())
 
+
     def mouseReleaseEvent(self, mouseEvent):
-        """Executed when the mouse is released from the item.
-        """
         super().mouseReleaseEvent(mouseEvent)
         self.handleSelected = None
         self.mousePressPos = None
@@ -105,30 +96,24 @@ class GraphicsRectItem(QGraphicsRectItem):
 
 
     def interactiveResize(self, mousePos):
-        """Perform shape interactive resize.
-        """
-        rect = self.rect()
         self.prepareGeometryChange()
+        rect = self.rect()
 
         if self.handleSelected == self.handleTopLeft:
-
             rect.setLeft(self.mousePressRect.left() + mousePos.x() - self.mousePressPos.x())
             rect.setTop(self.mousePressRect.top() + mousePos.y() - self.mousePressPos.y())
             self.setRect(rect)
 
         elif self.handleSelected == self.handleTopMiddle:
-
             rect.setTop(self.mousePressRect.top() + mousePos.y() - self.mousePressPos.y())
             self.setRect(rect)
 
         elif self.handleSelected == self.handleTopRight:
-
             rect.setRight(self.mousePressRect.right() + mousePos.x() - self.mousePressPos.x())
             rect.setTop(self.mousePressRect.top() + mousePos.y() - self.mousePressPos.y())
             self.setRect(rect)
 
         elif self.handleSelected == self.handleMiddleLeft:
-
             rect.setLeft(self.mousePressRect.left() + mousePos.x() - self.mousePressPos.x())
             self.setRect(rect)
 
@@ -137,26 +122,21 @@ class GraphicsRectItem(QGraphicsRectItem):
             self.setRect(rect)
 
         elif self.handleSelected == self.handleBottomLeft:
-
             rect.setLeft(self.mousePressRect.left() + mousePos.x() - self.mousePressPos.x())
             rect.setBottom(self.mousePressRect.bottom() + mousePos.y() - self.mousePressPos.y())
             self.setRect(rect)
 
         elif self.handleSelected == self.handleBottomMiddle:
-
             rect.setBottom(self.mousePressRect.bottom() + mousePos.y() - self.mousePressPos.y())
             self.setRect(rect)
 
         elif self.handleSelected == self.handleBottomRight:
-
             rect.setRight(self.mousePressRect.right() + mousePos.x() - self.mousePressPos.x())
             rect.setBottom(self.mousePressRect.bottom() + mousePos.y() - self.mousePressPos.y())
             self.setRect(rect)
 
 
     def paint(self, painter, option, widget=None):
-        """Paint the node in the graphic view.
-        """
         if self.isSelected():
             painter.setBrush(QBrush(QColor(0, 0, 255, 100)))
         else:
