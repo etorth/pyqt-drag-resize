@@ -7,6 +7,8 @@ from PyQt6.QtWidgets import QGraphicsRectItem, QApplication, QGraphicsView, QGra
 
 class GraphicsRectItem(QGraphicsRectItem):
 
+    dragDistance = 8.0
+
     handleTopLeft = 1
     handleTopMiddle = 2
     handleTopRight = 3
@@ -15,9 +17,6 @@ class GraphicsRectItem(QGraphicsRectItem):
     handleBottomLeft = 6
     handleBottomMiddle = 7
     handleBottomRight = 8
-
-    dragDistance = +8.0
-    handleSpace = -4.0
 
     handleCursors = {
         handleTopLeft: Qt.CursorShape.SizeFDiagCursor,
@@ -65,7 +64,10 @@ class GraphicsRectItem(QGraphicsRectItem):
         """
         if self.isSelected():
             handle = self.handleAt(moveEvent.pos())
-            cursor = Qt.CursorShape.ArrowCursor if handle is None else self.handleCursors[handle]
+            if handle is None:
+                cursor = Qt.CursorShape.ArrowCursor
+            else:
+                cursor = self.handleCursors[handle]
             self.setCursor(cursor)
         super().hoverMoveEvent(moveEvent)
 
@@ -87,10 +89,10 @@ class GraphicsRectItem(QGraphicsRectItem):
     def mouseMoveEvent(self, mouseEvent):
         """Executed when the mouse is being moved over the item while being pressed.
         """
-        if self.handleSelected is not None:
-            self.interactiveResize(mouseEvent.pos())
-        else:
+        if self.handleSelected is None:
             super().mouseMoveEvent(mouseEvent)
+        else:
+            self.interactiveResize(mouseEvent.pos())
 
     def mouseReleaseEvent(self, mouseEvent):
         """Executed when the mouse is released from the item.
@@ -155,7 +157,11 @@ class GraphicsRectItem(QGraphicsRectItem):
     def paint(self, painter, option, widget=None):
         """Paint the node in the graphic view.
         """
-        painter.setBrush(QBrush(QColor(0, 0, 255, 100) if self.isSelected() else QColor(255, 0, 0, 100)))
+        if self.isSelected():
+            painter.setBrush(QBrush(QColor(0, 0, 255, 100)))
+        else:
+            painter.setBrush(QBrush(QColor(255, 0, 0, 100)))
+
         painter.setPen(QPen(QColor(0, 0, 0), 1.0, Qt.PenStyle.SolidLine))
         painter.drawRect(self.rect())
 
@@ -164,11 +170,10 @@ def main():
 
     app = QApplication(sys.argv)
 
-    grview = QGraphicsView()
     scene = QGraphicsScene()
-    scene.setSceneRect(0, 0, 680, 459)
+    scene.setSceneRect(0, 0, 800, 600)
 
-    scene.addPixmap(QPixmap('01.png'))
+    grview = QGraphicsView()
     grview.setScene(scene)
 
     item = GraphicsRectItem(0, 0, 300, 150)
